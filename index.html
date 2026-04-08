@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyNest — Your Academic Companion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+============================================================ */
+:root {
+  --bg:           #FEFCF5;
+  --surface:      #F7F2E6;
+  --surface2:     #EDE6D2;
+  --surface3:     #E3DACC;
+  --border:       #D6CAB0;
+  --border-light: #E8E0CE;
+  --primary:      #4A3728;
+  --primary-l:    #7A6253;
+  --accent:       #618552;
+  --accent-l:     #87A877;
+  --accent-bg:    #EDF2EA;
+  --imp:          #C0623A;
+  --imp-bg:       #FAEDE7;
+  --covered:      #436A8A;
+  --covered-bg:   #E7EFF5;
+  --text:         #2A1E10;
+  --text-muted:   #8A7A68;
+  --text-light:   #B0A090;
+  --white:        #FFFFFF;
+  --sh:           0 2px 10px rgba(74,55,40,.07);
+  --sh-md:        0 4px 20px rgba(74,55,40,.10);
+  --sh-lg:        0 8px 36px rgba(74,55,40,.14);
+  --radius:       10px;
+  --radius-lg:    16px;
+  --nav-h:        60px;
+  --sidebar-w:    240px;
+  font-size: 15px;
+}
+
+/* ============================================================
+   RESET
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+img { max-width: 100%; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ============================================================
+   TYPOGRAPHY
+============================================================ */
+h1,h2,h3,h4 { font-family: 'Playfair Display', serif; line-height: 1.25; }
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; }
+h4 { font-size: 1rem; }
+.display { font-size: 2.8rem; font-weight: 700; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: .85rem; }
+
+/* ============================================================
+   NAV
+============================================================ */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+  background: var(--white);
+  border-bottom: 1.5px solid var(--border-light);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; z-index: 1000;
+  box-shadow: var(--sh);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700;
+  color: var(--primary);
+}
+.nav-brand .leaf { font-size: 1.5rem; }
+.nav-links {
+  display: flex; align-items: center; gap: 4px;
+}
+.nav-links a {
+  padding: 6px 14px; border-radius: 8px; font-size: .875rem; font-weight: 500;
+  color: var(--text-muted); transition: all .2s;
+}
+.nav-links a:hover, .nav-links a.active {
+  background: var(--surface); color: var(--primary);
+}
+.nav-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.guest-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px; font-size: .78rem;
+  color: var(--text-muted);
+}
+.guest-badge span.id { font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 600; }
+#google-btn-wrapper .g_id_signin { transform: scale(.85); transform-origin: right center; }
+.hamburger {
+  display: none; flex-direction: column; gap: 5px; padding: 6px; cursor: pointer;
+  border-radius: 6px; transition: background .2s;
+}
+.hamburger:hover { background: var(--surface); }
+.hamburger span { display: block; width: 22px; height: 2px; background: var(--primary); border-radius: 2px; transition: all .3s; }
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ============================================================
+   MOBILE MENU DRAWER
+============================================================ */
+#mobile-menu {
+  position: fixed; top: var(--nav-h); left: 0; right: 0; bottom: 0;
+  background: var(--white); z-index: 999;
+  padding: 20px; display: none; flex-direction: column; gap: 6px;
+  overflow-y: auto;
+  animation: slideDown .25s ease;
+}
+#mobile-menu.open { display: flex; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+.mobile-menu-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: var(--radius); font-size: .95rem; font-weight: 500;
+  color: var(--text-muted); transition: all .2s; cursor: pointer;
+}
+.mobile-menu-link:hover, .mobile-menu-link.active { background: var(--surface); color: var(--primary); }
+.mobile-menu-link .icon { font-size: 1.2rem; width: 24px; text-align: center; }
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+#layout {
+  display: flex;
+  margin-top: var(--nav-h);
+  min-height: calc(100vh - var(--nav-h));
+}
+#sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--surface); border-right: 1.5px solid var(--border-light);
+  padding: 24px 12px; position: sticky; top: var(--nav-h);
+  height: calc(100vh - var(--nav-h)); overflow-y: auto;
+}
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-label {
+  font-size: .7rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-light); padding: 0 10px 8px;
+}
+.sidebar-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px; font-size: .875rem; font-weight: 500;
+  color: var(--text-muted); transition: all .2s; cursor: pointer; margin-bottom: 2px;
+}
+.sidebar-link:hover { background: var(--surface2); color: var(--text); }
+.sidebar-link.active { background: var(--primary); color: var(--white); }
+.sidebar-link .icon { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-file-list { margin-top: 8px; }
+.sidebar-file-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 6px; font-size: .8rem;
+  color: var(--text-muted); cursor: pointer; transition: all .15s;
+  border: 1px solid transparent;
+}
+.sidebar-file-item:hover { background: var(--surface2); }
+.sidebar-file-item.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-l); font-weight: 500; }
+.sidebar-file-item .fn { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#main { flex: 1; min-width: 0; }
+
+/* ============================================================
+   SECTIONS
+============================================================ */
+.section { display: none; min-height: calc(100vh - var(--nav-h)); }
+.section.active { display: block; }
+.section-inner { max-width: 1100px; margin: 0 auto; padding: 36px 28px; }
+.section-hero {
+  margin-bottom: 32px;
+}
+.section-hero h2 { margin-bottom: 8px; color: var(--primary); }
+.section-hero p { color: var(--text-muted); font-size: .95rem; }
+.breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .8rem; color: var(--text-light); margin-bottom: 8px;
+}
+.breadcrumb span { color: var(--text-muted); }
+.breadcrumb .sep { color: var(--border); }
+
+/* ============================================================
+   CARDS
+============================================================ */
+.card {
+  background: var(--white); border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--sh);
+}
+.card-sm { padding: 16px; }
+.card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; margin-bottom: 14px; color: var(--primary); }
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 20px; border-radius: 8px; font-size: .875rem; font-weight: 500;
+  transition: all .2s; cursor: pointer; border: none; font-family: inherit;
+}
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-primary:hover { background: var(--primary-l); }
+.btn-accent { background: var(--accent); color: var(--white); }
+.btn-accent:hover { background: var(--accent-l); }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--border); }
+.btn-outline:hover { background: var(--surface); }
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover { background: var(--surface); color: var(--text); }
+.btn-danger { background: var(--imp-bg); color: var(--imp); border: 1px solid #E8C4B4; }
+.btn-danger:hover { background: var(--imp); color: var(--white); }
+.btn-sm { padding: 5px 12px; font-size: .8rem; }
+.btn-xs { padding: 3px 8px; font-size: .75rem; border-radius: 5px; }
+.btn:disabled { opacity: .5; pointer-events: none; }
+
+/* ============================================================
+   HOME / UPLOAD
+============================================================ */
+#home .hero-wrap {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 32px;
+}
+.hero-text { padding-top: 16px; }
+.hero-text h1 { color: var(--primary); margin-bottom: 14px; font-size: 2.4rem; line-height: 1.15; }
+.hero-text p { color: var(--text-muted); font-size: 1rem; line-height: 1.65; margin-bottom: 20px; }
+.hero-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.hero-stat { text-align: center; }
+.hero-stat .num { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+.hero-stat .lbl { font-size: .75rem; color: var(--text-light); }
+
+.upload-zone {
+  border: 2.5px dashed var(--border); border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 48px 24px; text-align: center; cursor: pointer;
+  transition: all .25s; position: relative; overflow: hidden;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent); background: var(--accent-bg);
+}
+.upload-zone .up-icon { font-size: 3rem; margin-bottom: 14px; display: block; }
+.upload-zone h3 { color: var(--primary); margin-bottom: 8px; }
+.upload-zone p { color: var(--text-muted); font-size: .875rem; margin-bottom: 16px; }
+.upload-zone input[type="file"] { display: none; }
+
+.file-limit-bar {
+  margin-top: 12px; background: var(--surface2); border-radius: 20px; height: 6px; overflow: hidden;
+}
+.file-limit-fill {
+  height: 100%; background: var(--accent); border-radius: 20px; transition: width .4s;
+}
+.file-limit-fill.warn { background: var(--imp); }
+
+/* ============================================================
+   LIBRARY
+============================================================ */
+.file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.file-card {
+  background: var(--white); border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--sh);
+  transition: all .2s; cursor: pointer; position: relative; overflow: hidden;
+}
+.file-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); border-color: var(--accent-l); }
+.file-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--covered));
+}
+.file-card .fc-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.file-card .fc-name { font-weight: 600; color: var(--primary); font-size: .95rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-card .fc-meta { font-size: .78rem; color: var(--text-light); margin-bottom: 14px; }
+.file-card .fc-progress { margin-bottom: 12px; }
+.fc-prog-row { display: flex; justify-content: space-between; font-size: .78rem; color: var(--text-muted); margin-bottom: 4px; }
+.fc-prog-bar { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.fc-prog-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .5s; }
+.file-card .fc-actions { display: flex; gap: 6px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state .es-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
+.empty-state p { font-size: .95rem; }
+
+/* ============================================================
+   DASHBOARD — TOPICS
+============================================================ */
+.topic-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); padding: 4px; border-radius: 10px; width: fit-content; }
+.topic-tab {
+  padding: 7px 20px; border-radius: 7px; font-size: .875rem; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; transition: all .2s; border: none; background: none; font-family: inherit;
+}
+.topic-tab.active { background: var(--white); color: var(--primary); box-shadow: var(--sh); }
+.topic-tab .count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; border-radius: 9px; font-size: .7rem; font-weight: 600;
+  margin-left: 6px; padding: 0 5px;
+}
+.topic-tab:nth-child(1) .count { background: var(--surface2); color: var(--text-muted); }
+.topic-tab:nth-child(2) .count { background: var(--covered-bg); color: var(--covered); }
+.topic-tab.active:nth-child(1) .count { background: var(--surface2); }
+
+.topic-list { display: flex; flex-direction: column; gap: 6px; }
+.topic-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--white); border: 1.5px solid var(--border-light);
+  border-radius: var(--radius); transition: all .2s; cursor: pointer; position: relative;
+}
+.topic-item:hover { border-color: var(--border); }
+.topic-item.important { border-left: 3px solid var(--imp); background: var(--imp-bg); }
+.topic-item.covered { border-left: 3px solid var(--accent); background: var(--accent-bg); opacity: .8; }
+.topic-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: .65rem; color: transparent; transition: all .2s; cursor: pointer;
+}
+.topic-item.covered .topic-check { border-color: var(--accent); background: var(--accent); color: var(--white); }
+.topic-name { flex: 1; font-size: .9rem; font-weight: 500; }
+.topic-item.covered .topic-name { color: var(--text-muted); text-decoration: line-through; }
+.topic-imp-badge {
+  font-size: .7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  background: var(--imp-bg); color: var(--imp); border: 1px solid #E8C4B4;
+}
+.topic-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.topic-item:hover .topic-actions { opacity: 1; }
+.topic-action-btn {
+  padding: 4px 8px; border-radius: 5px; font-size: .75rem; border: none;
+  background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all .15s;
+}
+.topic-action-btn:hover { background: var(--surface2); color: var(--text); }
+.topic-action-btn.del:hover { background: var(--imp-bg); color: var(--imp); }
+.topic-action-btn.imp { color: var(--imp); }
+
+.add-topic-row {
+  display: flex; gap: 8px; margin-top: 14px;
+}
+.add-topic-input {
+  flex: 1; padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: .875rem; background: var(--white); color: var(--text); outline: none; transition: border .2s;
+}
+.add-topic-input:focus { border-color: var(--accent); }
+
+/* ============================================================
+   PDF VIEWER + NOTES
+============================================================ */
+#viewer .viewer-layout {
+  display: grid; grid-template-columns: 1fr 340px; gap: 0;
+  height: calc(100vh - var(--nav-h) - 60px);
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--sh-md);
+}
+.pdf-panel {
+  display: flex; flex-direction: column; background: var(--surface2);
+  border-right: 1.5px solid var(--border);
+}
+.pdf-toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: var(--white); border-bottom: 1.5px solid var(--border-light); flex-wrap: wrap;
+}
+.pdf-toolbar .page-info {
+  display: flex; align-items: center; gap: 6px; font-size: .875rem; color: var(--text-muted);
+}
+.pdf-toolbar .page-info input {
+  width: 40px; text-align: center; padding: 3px 6px; border: 1.5px solid var(--border);
+  border-radius: 5px; font-size: .8rem; outline: none;
+}
+.pdf-canvas-wrap {
+  flex: 1; overflow: auto; display: flex; justify-content: center; padding: 16px;
+}
+#pdf-canvas {
+  box-shadow: var(--sh-md); border-radius: 4px;
+  max-width: 100%; display: block;
+}
+.pdf-placeholder {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; color: var(--text-light);
+}
+.pdf-placeholder .ph-icon { font-size: 3rem; }
+
+.notes-panel {
+  display: flex; flex-direction: column; background: var(--white);
+}
+.notes-header {
+  padding: 14px 16px; border-bottom: 1.5px solid var(--border-light);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.notes-header h4 { font-family: 'Playfair Display', serif; font-size: .95rem; color: var(--primary); }
+.notes-toolbar {
+  display: flex; gap: 2px; padding: 8px 12px; border-bottom: 1px solid var(--border-light); flex-wrap: wrap;
+}
+.notes-tool-btn {
+  width: 28px; height: 28px; border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; cursor: pointer; transition: all .15s; border: none; background: none; color: var(--text-muted);
+}
+.notes-tool-btn:hover { background: var(--surface); color: var(--text); }
+.notes-tool-btn.active { background: var(--primary); color: var(--white); }
+.notes-divider { width: 1px; height: 24px; background: var(--border-light); margin: 2px 4px; }
+#notes-area {
+  flex: 1; padding: 16px; outline: none; overflow-y: auto;
+  font-size: .875rem; line-height: 1.7; color: var(--text);
+  min-height: 200px;
+}
+#notes-area:empty::before {
+  content: 'Start typing your notes here…\A\AUse the toolbar above to format your text.\A\ATip: Highlight key points with bold.';
+  white-space: pre; color: var(--text-light); font-style: italic;
+}
+#notes-area h1,#notes-area h2,#notes-area h3 { font-family: 'Playfair Display', serif; color: var(--primary); margin: 12px 0 6px; }
+#notes-area blockquote {
+  border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-muted);
+  margin: 8px 0; font-style: italic;
+}
+#notes-area ul, #notes-area ol { padding-left: 20px; }
+#notes-area code { font-family: 'JetBrains Mono', monospace; background: var(--surface); padding: 1px 5px; border-radius: 3px; font-size: .82em; }
+.notes-footer { padding: 10px 14px; border-top: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; }
+.notes-footer .save-status { font-size: .75rem; color: var(--text-light); }
+
+/* ============================================================
+   AI SUMMARY
+============================================================ */
+.summary-box {
+  background: linear-gradient(135deg, #F0EEE6 0%, #E8F0EB 100%);
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg);
+  padding: 28px; position: relative; overflow: hidden;
+}
+.summary-box::before {
+  content: '✦'; position: absolute; top: -10px; right: 20px;
+  font-size: 4rem; color: rgba(74,55,40,.05);
+}
+.summary-box .ai-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--primary); color: var(--white);
+  border-radius: 20px; padding: 3px 12px; font-size: .75rem; font-weight: 600;
+  margin-bottom: 14px; letter-spacing: .04em;
+}
+.summary-content {
+  font-size: .9rem; line-height: 1.8; color: var(--text);
+  white-space: pre-wrap;
+}
+.summary-skeleton {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.skel-line {
+  height: 14px; background: linear-gradient(90deg, var(--surface2) 25%, var(--border-light) 50%, var(--surface2) 75%);
+  background-size: 200% 100%; border-radius: 7px;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ============================================================
+   INSIGHTS
+============================================================ */
+.insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.insight-card {
+  background: var(--white); border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--sh);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.insight-card .ic-label { font-size: .78rem; color: var(--text-light); text-transform: uppercase; letter-spacing: .06em; }
+.insight-card .ic-value { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--primary); }
+.insight-card .ic-sub { font-size: .8rem; color: var(--text-muted); }
+.insight-card .ic-icon { font-size: 1.5rem; }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.chart-card { background: var(--white); border: 1.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--sh); }
+.chart-card h4 { font-family: 'Playfair Display', serif; font-size: .95rem; color: var(--primary); margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 200px; }
+.streak-display {
+  display: flex; align-items: center; gap: 20px;
+  background: linear-gradient(135deg, #4A3728, #7A6253);
+  color: var(--white); border-radius: var(--radius-lg); padding: 24px;
+}
+.streak-display .streak-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; line-height: 1; }
+.streak-display .streak-text h3 { color: var(--white); font-size: 1rem; margin-bottom: 4px; }
+.streak-display .streak-text p { font-size: .82rem; opacity: .75; }
+
+/* ============================================================
+   CALENDAR
+============================================================ */
+.calendar-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+.calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.calendar-header h3 { font-family: 'Playfair Display', serif; color: var(--primary); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow {
+  text-align: center; font-size: .72rem; font-weight: 600;
+  color: var(--text-light); padding: 6px; text-transform: uppercase; letter-spacing: .05em;
+}
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 8px; font-size: .85rem; cursor: pointer; transition: all .15s;
+  position: relative; border: 1.5px solid transparent; gap: 2px;
+}
+.cal-day:hover { background: var(--surface); }
+.cal-day.has-event::after {
+  content: ''; display: block; width: 5px; height: 5px; background: var(--accent);
+  border-radius: 50%; position: absolute; bottom: 4px;
+}
+.cal-day.today { background: var(--primary); color: var(--white); font-weight: 600; }
+.cal-day.today:hover { background: var(--primary-l); }
+.cal-day.selected { border-color: var(--accent); background: var(--accent-bg); }
+.cal-day.other-month { color: var(--text-light); opacity: .5; }
+.event-panel { background: var(--white); border: 1.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 20px; }
+.event-panel h4 { font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 14px; }
+.event-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; min-height: 80px; }
+.event-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--surface); border-radius: 7px; font-size: .82rem;
+}
+.event-item .ev-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.event-item .ev-text { flex: 1; color: var(--text); }
+.event-item .ev-del { color: var(--text-light); cursor: pointer; font-size: .9rem; }
+.event-item .ev-del:hover { color: var(--imp); }
+.add-event-row { display: flex; gap: 6px; }
+.add-event-input {
+  flex: 1; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 7px;
+  font-size: .82rem; outline: none; background: var(--white);
+}
+.add-event-input:focus { border-color: var(--accent); }
+
+/* ============================================================
+   HELP
+============================================================ */
+.help-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.help-card {
+  background: var(--white); border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--sh);
+}
+.help-card .hc-icon { font-size: 1.8rem; margin-bottom: 12px; }
+.help-card h4 { font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 8px; }
+.help-card p { font-size: .875rem; color: var(--text-muted); line-height: 1.6; }
+.accordion-item {
+  border: 1.5px solid var(--border-light); border-radius: var(--radius);
+  margin-bottom: 8px; overflow: hidden; background: var(--white);
+}
+.accordion-head {
+  padding: 14px 18px; cursor: pointer; display: flex; align-items: center;
+  justify-content: space-between; font-weight: 500; font-size: .9rem;
+  transition: background .15s;
+}
+.accordion-head:hover { background: var(--surface); }
+.accordion-head .arr { transition: transform .25s; font-size: .75rem; color: var(--text-light); }
+.accordion-item.open .accordion-head .arr { transform: rotate(180deg); }
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+.accordion-item.open .accordion-body { max-height: 400px; }
+.accordion-body-inner { padding: 0 18px 16px; font-size: .875rem; color: var(--text-muted); line-height: 1.65; }
+
+/* ============================================================
+   CONTACT
+============================================================ */
+.contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.contact-info { padding-top: 8px; }
+.contact-info h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--primary); margin-bottom: 12px; }
+.contact-info p { font-size: .9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 20px; }
+.contact-links { display: flex; flex-direction: column; gap: 10px; }
+.contact-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface); border-radius: var(--radius); font-size: .875rem;
+}
+.contact-link .cl-icon { font-size: 1.1rem; }
+.contact-form { background: var(--white); border: 1.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+.form-input {
+  width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: .875rem; background: var(--white); color: var(--text); outline: none; transition: border .2s;
+}
+.form-input:focus { border-color: var(--accent); }
+textarea.form-input { resize: vertical; min-height: 100px; }
+
+/* ============================================================
+   TOAST
+============================================================ */
+#toast-container {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  min-width: 240px; max-width: 340px;
+  background: var(--primary); color: var(--white);
+  border-radius: 10px; padding: 12px 18px;
+  font-size: .875rem; box-shadow: var(--sh-lg);
+  animation: toastIn .25s ease;
+  display: flex; align-items: center; gap: 10px;
+}
+.toast.success { background: var(--accent); }
+.toast.error { background: var(--imp); }
+.toast.info { background: var(--covered); }
+@keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
+
+/* ============================================================
+   MODAL
+============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(42,30,16,.45);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px); animation: fadeIn .2s;
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.modal {
+  background: var(--white); border-radius: var(--radius-lg); padding: 28px;
+  max-width: 480px; width: 90%; box-shadow: var(--sh-lg);
+  animation: scaleIn .2s ease;
+}
+@keyframes scaleIn { from { transform: scale(.95); opacity:0; } to { transform:none; opacity:1; } }
+.modal h3 { font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 12px; }
+.modal p { font-size: .9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ============================================================
+   LOADING SPINNER
+============================================================ */
+.spinner {
+  width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: var(--white); border-radius: 50%; animation: spin .6s linear infinite;
+}
+.spinner.dark { border-color: rgba(74,55,40,.2); border-top-color: var(--primary); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   BADGES & TAGS
+============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 10px; font-size: .72rem; font-weight: 600;
+}
+.badge-green { background: var(--accent-bg); color: var(--accent); }
+.badge-red { background: var(--imp-bg); color: var(--imp); }
+.badge-blue { background: var(--covered-bg); color: var(--covered); }
+.badge-gray { background: var(--surface2); color: var(--text-muted); }
+
+/* ============================================================
+   DIVIDERS & MISC
+============================================================ */
+.divider { height: 1.5px; background: var(--border-light); margin: 20px 0; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-20 { margin-top: 20px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.text-muted { color: var(--text-muted); font-size: .875rem; }
+.text-sm { font-size: .82rem; }
+
+/* ============================================================
+   FILE NOT SELECTED STATE
+============================================================ */
+.select-file-prompt {
+  text-align: center; padding: 80px 20px;
+  color: var(--text-muted);
+}
+.select-file-prompt .sfp-icon { font-size: 3rem; margin-bottom: 16px; }
+.select-file-prompt h3 { font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 8px; }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 900px) {
+  #sidebar { display: none; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  #home .hero-wrap { grid-template-columns: 1fr; }
+  .charts-row { grid-template-columns: 1fr; }
+  .contact-layout { grid-template-columns: 1fr; }
+  .calendar-layout { grid-template-columns: 1fr; }
+  #viewer .viewer-layout { grid-template-columns: 1fr; height: auto; }
+  .notes-panel { min-height: 400px; }
+}
+@media (max-width: 600px) {
+  .section-inner { padding: 20px 16px; }
+  h1 { font-size: 1.7rem; }
+  .hero-text h1 { font-size: 1.8rem; }
+  .file-grid { grid-template-columns: 1fr; }
+  .insights-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav id="nav">
+  <div class="nav-brand">
+    <span class="leaf">🌿</span>
+    StudyNest
+  </div>
+  <div class="nav-links">
+    <a href="#" onclick="showSection('home')" class="active" id="nl-home">Home</a>
+    <a href="#" onclick="showSection('library')" id="nl-library">Library</a>
+    <a href="#" onclick="showSection('dashboard')" id="nl-dashboard">Dashboard</a>
+    <a href="#" onclick="showSection('viewer')" id="nl-viewer">PDF Viewer</a>
+    <a href="#" onclick="showSection('insights')" id="nl-insights">Insights</a>
+    <a href="#" onclick="showSection('calendar')" id="nl-calendar">Calendar</a>
+    <a href="#" onclick="showSection('help')" id="nl-help">Help</a>
+    <a href="#" onclick="showSection('contact')" id="nl-contact">Contact</a>
+  </div>
+  <div class="nav-right">
+    <div class="guest-badge" id="user-badge">
+      <span>👤</span>
+      <span>Guest · <span class="id" id="badge-uid">—</span></span>
+    </div>
+    <div id="google-btn-wrapper"></div>
+    <button id="signout-btn" class="btn btn-outline btn-sm" style="display:none" onclick="signOut()">Sign Out</button>
+    <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Drawer -->
+<div id="mobile-menu">
+  <div class="mobile-menu-link active" onclick="showSection('home');closeMobileMenu()"><span class="icon">🏠</span>Home</div>
+  <div class="mobile-menu-link" onclick="showSection('library');closeMobileMenu()"><span class="icon">📚</span>Library</div>
+  <div class="mobile-menu-link" onclick="showSection('dashboard');closeMobileMenu()"><span class="icon">📋</span>Dashboard</div>
+  <div class="mobile-menu-link" onclick="showSection('viewer');closeMobileMenu()"><span class="icon">📄</span>PDF Viewer</div>
+  <div class="mobile-menu-link" onclick="showSection('insights');closeMobileMenu()"><span class="icon">📊</span>Insights</div>
+  <div class="mobile-menu-link" onclick="showSection('calendar');closeMobileMenu()"><span class="icon">📅</span>Calendar</div>
+  <div class="mobile-menu-link" onclick="showSection('help');closeMobileMenu()"><span class="icon">❓</span>Help</div>
+  <div class="mobile-menu-link" onclick="showSection('contact');closeMobileMenu()"><span class="icon">✉️</span>Contact</div>
+</div>
+
+<!-- ============================================================
+     LAYOUT
+============================================================ -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigate</div>
+      <div class="sidebar-link active" id="sl-home" onclick="showSection('home')"><span class="icon">🏠</span>Home</div>
+      <div class="sidebar-link" id="sl-library" onclick="showSection('library')"><span class="icon">📚</span>Library</div>
+      <div class="sidebar-link" id="sl-dashboard" onclick="showSection('dashboard')"><span class="icon">📋</span>Dashboard</div>
+      <div class="sidebar-link" id="sl-viewer" onclick="showSection('viewer')"><span class="icon">📄</span>PDF Viewer</div>
+      <div class="sidebar-link" id="sl-insights" onclick="showSection('insights')"><span class="icon">📊</span>Insights</div>
+      <div class="sidebar-link" id="sl-calendar" onclick="showSection('calendar')"><span class="icon">📅</span>Calendar</div>
+      <div class="sidebar-link" id="sl-help" onclick="showSection('help')"><span class="icon">❓</span>Help</div>
+      <div class="sidebar-link" id="sl-contact" onclick="showSection('contact')"><span class="icon">✉️</span>Contact</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">My Files</div>
+      <div class="sidebar-file-list" id="sidebar-file-list">
+        <div style="font-size:.78rem;color:var(--text-light);padding:4px 10px;">No files yet</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+
+    <!-- ============ HOME ============ -->
+    <section class="section active" id="sec-home">
+      <div class="section-inner">
+        <div class="hero-wrap">
+          <div class="hero-text">
+            <h1>Your Smart<br><em>Study Companion</em></h1>
+            <p>Upload your PDFs, let AI extract topics, track your progress, take notes, and stay organized — all in one place.</p>
+            <div class="hero-stats">
+              <div class="hero-stat"><div class="num" id="stat-files">0</div><div class="lbl">Files</div></div>
+              <div class="hero-stat"><div class="num" id="stat-topics">0</div><div class="lbl">Topics</div></div>
+              <div class="hero-stat"><div class="num" id="stat-covered">0</div><div class="lbl">Covered</div></div>
+              <div class="hero-stat"><div class="num" id="stat-streak">0</div><div class="lbl">Day Streak 🔥</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+              <input type="file" id="file-input" accept=".pdf" onchange="handleFileSelect(event)">
+              <span class="up-icon">📂</span>
+              <h3>Upload a PDF</h3>
+              <p>Drag & drop or click to browse<br><small>PDF files only · Max 50MB</small></p>
+              <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('file-input').click()">Choose File</button>
+            </div>
+            <div class="row mt-12" style="justify-content:space-between;font-size:.8rem;color:var(--text-muted);">
+              <span id="file-limit-label">0 / 5 files used</span>
+              <span id="upgrade-hint" style="display:none">
+                <a href="#" style="color:var(--accent)" onclick="showGoogleSignIn()">Sign in with Google</a> for more space
+              </span>
+            </div>
+            <div class="file-limit-bar mt-8">
+              <div class="file-limit-fill" id="file-limit-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Files on Home -->
+        <div id="home-recent">
+          <div class="row mb-16" style="justify-content:space-between">
+            <h3 style="color:var(--primary)">Recent Files</h3>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('library')">View All →</button>
+          </div>
+          <div class="file-grid" id="home-file-grid">
+            <div class="empty-state"><span class="es-icon">📁</span><p>No files yet. Upload your first PDF to get started!</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIBRARY ============ -->
+    <section class="section" id="sec-library">
+      <div class="section-inner">
+        <div class="section-hero">
+          <div class="breadcrumb"><span>StudyNest</span><span class="sep">›</span><span>Library</span></div>
+          <h2>My Library</h2>
+          <p>All your uploaded study materials in one place.</p>
+        </div>
+        <div class="row mb-16">
+          <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">+ Upload New PDF</button>
+          <input type="text" placeholder="Search files…" class="add-topic-input" style="max-width:220px" oninput="filterLibrary(this.value)">
+        </div>
+        <div class="file-grid" id="library-grid">
+          <div class="empty-state"><span class="es-icon">📚</span><p>No files yet. Upload your first PDF!</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="section" id="sec-dashboard">
+      <div class="section-inner" id="dashboard-inner">
+        <div class="select-file-prompt" id="dash-prompt">
+          <div class="sfp-icon">📋</div>
+          <h3>Select a File</h3>
+          <p class="text-muted">Choose a file from your <a href="#" onclick="showSection('library')" style="color:var(--accent)">Library</a> to manage its topics.</p>
+        </div>
+        <div id="dash-content" style="display:none">
+          <div class="section-hero">
+            <div class="breadcrumb"><span>Library</span><span class="sep">›</span><span id="dash-filename">—</span></div>
+            <div class="row" style="justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px">
+              <h2 id="dash-title">Topics</h2>
+              <div class="row">
+                <button class="btn btn-outline btn-sm" onclick="showSection('viewer')">📄 Open PDF</button>
+                <button class="btn btn-accent btn-sm" id="dash-ai-btn" onclick="extractTopicsWithAI()">
+                  ✨ Re-scan with AI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Section -->
+          <div class="card mb-16" id="summary-card" style="display:none">
+            <div class="summary-box">
+              <div class="ai-label">✦ AI Summary</div>
+              <div class="summary-content" id="summary-text"></div>
+            </div>
+            <button class="btn btn-outline btn-sm mt-12" onclick="generateSummary()">🔄 Regenerate Summary</button>
+          </div>
+          <div class="row mb-16">
+            <button class="btn btn-outline btn-sm" onclick="showSummarySection()">📝 AI Summary</button>
+            <button class="btn btn-outline btn-sm" onclick="generateSummary()">✨ Generate Summary</button>
+          </div>
+
+          <!-- Topic Tabs -->
+          <div class="topic-tabs">
+            <button class="topic-tab active" id="tab-remaining" onclick="switchTopicTab('remaining')">
+              Remaining <span class="count" id="cnt-remaining">0</span>
+            </button>
+            <button class="topic-tab" id="tab-covered" onclick="switchTopicTab('covered')">
+              Covered <span class="count" id="cnt-covered">0</span>
+            </button>
+          </div>
+
+          <div id="topic-list-remaining" class="topic-list"></div>
+          <div id="topic-list-covered" class="topic-list" style="display:none"></div>
+
+          <div class="add-topic-row mt-12">
+            <input type="text" class="add-topic-input" id="new-topic-input" placeholder="Add a topic…" onkeydown="if(event.key==='Enter')addTopic()">
+            <button class="btn btn-accent" onclick="addTopic()">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PDF VIEWER ============ -->
+    <section class="section" id="sec-viewer">
+      <div style="padding:16px 20px 8px;">
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div class="breadcrumb"><span>Dashboard</span><span class="sep">›</span><span id="viewer-filename">No file selected</span></div>
+            <h3 style="color:var(--primary)">PDF Viewer + Notes</h3>
+          </div>
+          <div class="row">
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('viewer-file-input').click()">📂 Load PDF</button>
+            <input type="file" id="viewer-file-input" accept=".pdf" style="display:none" onchange="loadPDFFromInput(event)">
+            <button class="btn btn-accent btn-sm" onclick="saveNotes()">💾 Save Notes</button>
+          </div>
+        </div>
+      </div>
+      <div class="viewer-layout" id="viewer-layout" style="margin:0 20px 20px; border-radius: var(--radius-lg);">
+        <!-- PDF Panel -->
+        <div class="pdf-panel">
+          <div class="pdf-toolbar">
+            <button class="btn btn-ghost btn-sm" onclick="changePage(-1)">‹ Prev</button>
+            <div class="page-info">
+              <input type="number" id="page-num-input" value="1" min="1" onchange="jumpToPage(this.value)">
+              <span>/ <span id="page-total">1</span></span>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="changePage(1)">Next ›</button>
+            <div style="flex:1"></div>
+            <button class="btn btn-ghost btn-sm" onclick="changeZoom(-0.25)">−</button>
+            <span style="font-size:.8rem;color:var(--text-muted);min-width:40px;text-align:center" id="zoom-label">100%</span>
+            <button class="btn btn-ghost btn-sm" onclick="changeZoom(0.25)">+</button>
+            <button class="btn btn-ghost btn-sm" onclick="rotatePDF()">↻</button>
+          </div>
+          <div class="pdf-canvas-wrap" id="pdf-canvas-wrap">
+            <div class="pdf-placeholder" id="pdf-placeholder">
+              <div class="ph-icon">📄</div>
+              <p style="color:var(--text-muted);font-size:.875rem">Select a file from the library or load a PDF to view it here.</p>
+              <button class="btn btn-primary btn-sm mt-8" onclick="document.getElementById('viewer-file-input').click()">Load PDF</button>
+            </div>
+            <canvas id="pdf-canvas" style="display:none"></canvas>
+          </div>
+        </div>
+
+        <!-- Notes Panel -->
+        <div class="notes-panel">
+          <div class="notes-header">
+            <h4>📓 My Notes</h4>
+            <span class="badge badge-green" style="font-size:.7rem">Auto-save on</span>
+          </div>
+          <div class="notes-toolbar">
+            <button class="notes-tool-btn" title="Bold" onclick="fmtNote('bold')"><b>B</b></button>
+            <button class="notes-tool-btn" title="Italic" onclick="fmtNote('italic')"><em>I</em></button>
+            <button class="notes-tool-btn" title="Underline" onclick="fmtNote('underline')"><u>U</u></button>
+            <button class="notes-tool-btn" title="Strikethrough" onclick="fmtNote('strikeThrough')"><s>S</s></button>
+            <div class="notes-divider"></div>
+            <button class="notes-tool-btn" title="H1" onclick="fmtNote('formatBlock','h1')">H1</button>
+            <button class="notes-tool-btn" title="H2" onclick="fmtNote('formatBlock','h2')">H2</button>
+            <button class="notes-tool-btn" title="Paragraph" onclick="fmtNote('formatBlock','p')">¶</button>
+            <div class="notes-divider"></div>
+            <button class="notes-tool-btn" title="Bullet List" onclick="fmtNote('insertUnorderedList')">• List</button>
+            <button class="notes-tool-btn" title="Numbered List" onclick="fmtNote('insertOrderedList')">1. List</button>
+            <div class="notes-divider"></div>
+            <button class="notes-tool-btn" title="Quote" onclick="fmtNote('formatBlock','blockquote')">"</button>
+            <button class="notes-tool-btn" title="Code" onclick="insertCode()">{ }</button>
+            <div class="notes-divider"></div>
+            <button class="notes-tool-btn" title="Clear Formatting" onclick="fmtNote('removeFormat')" style="font-size:.7rem">Clear</button>
+          </div>
+          <div id="notes-area" contenteditable="true" spellcheck="true" oninput="scheduleNoteSave()"></div>
+          <div class="notes-footer">
+            <span class="save-status" id="notes-save-status">Ready</span>
+            <button class="btn btn-ghost btn-xs" onclick="clearNotes()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INSIGHTS ============ -->
+    <section class="section" id="sec-insights">
+      <div class="section-inner">
+        <div class="section-hero">
+          <div class="breadcrumb"><span>StudyNest</span><span class="sep">›</span><span>Insights</span></div>
+          <h2>Study Insights</h2>
+          <p>Track your progress and study patterns at a glance.</p>
+        </div>
+
+        <!-- Streak Banner -->
+        <div class="streak-display mb-16" id="streak-banner">
+          <div style="font-size:2.5rem">🔥</div>
+          <div>
+            <div class="streak-num" id="ins-streak">0</div>
+            <div class="streak-text">
+              <h3>Day Streak</h3>
+              <p id="ins-streak-sub">Start studying today to begin your streak!</p>
+            </div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:white" onclick="logStudySession()">✅ Log Today's Session</button>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="insights-grid" id="insights-grid">
+          <div class="insight-card">
+            <div class="ic-icon">📚</div>
+            <div class="ic-label">Total Files</div>
+            <div class="ic-value" id="ins-files">0</div>
+            <div class="ic-sub">PDFs uploaded</div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-icon">📌</div>
+            <div class="ic-label">Total Topics</div>
+            <div class="ic-value" id="ins-topics">0</div>
+            <div class="ic-sub">across all files</div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-icon">✅</div>
+            <div class="ic-label">Topics Covered</div>
+            <div class="ic-value" id="ins-covered">0</div>
+            <div class="ic-sub" id="ins-covered-pct">0% complete</div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-icon">⭐</div>
+            <div class="ic-label">Marked Important</div>
+            <div class="ic-value" id="ins-important">0</div>
+            <div class="ic-sub">need extra attention</div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <h4>Topic Progress</h4>
+            <div class="chart-wrap"><canvas id="progress-chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h4>Per-File Breakdown</h4>
+            <div class="chart-wrap"><canvas id="file-chart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Per-file progress list -->
+        <div class="card">
+          <div class="card-title">File Progress Details</div>
+          <div id="file-progress-list" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CALENDAR ============ -->
+    <section class="section" id="sec-calendar">
+      <div class="section-inner">
+        <div class="section-hero">
+          <div class="breadcrumb"><span>StudyNest</span><span class="sep">›</span><span>Calendar</span></div>
+          <h2>Study Planner</h2>
+          <p>Plan your study sessions and track your daily progress.</p>
+        </div>
+        <div class="calendar-layout">
+          <div>
+            <div class="calendar-header">
+              <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">‹</button>
+              <h3 id="cal-month-label">—</h3>
+              <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">›</button>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+          </div>
+          <div class="event-panel">
+            <h4 id="event-panel-date">Select a day</h4>
+            <div class="event-list" id="event-list">
+              <div style="font-size:.82rem;color:var(--text-light)">No events for this day.</div>
+            </div>
+            <div class="add-event-row">
+              <input type="text" class="add-event-input" id="new-event-input" placeholder="Add study note…" onkeydown="if(event.key==='Enter')addCalendarEvent()">
+              <button class="btn btn-accent btn-sm" onclick="addCalendarEvent()">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HELP ============ -->
+    <section class="section" id="sec-help">
+      <div class="section-inner">
+        <div class="section-hero">
+          <div class="breadcrumb"><span>StudyNest</span><span class="sep">›</span><span>Help</span></div>
+          <h2>How to Use StudyNest</h2>
+          <p>Everything you need to know to get the most out of your study companion.</p>
+        </div>
+
+        <div class="help-grid">
+          <div class="help-card">
+            <div class="hc-icon">📤</div>
+            <h4>Upload a PDF</h4>
+            <p>Drag and drop or click the upload zone on the Home page. Supports all standard PDFs up to 50MB. Files are recognized by name — re-uploading the same file merges with existing data.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">✨</div>
+            <h4>AI Topic Extraction</h4>
+            <p>After upload, StudyNest sends your PDF to Google Gemini AI, which reads the content and extracts chapter/topic names automatically. You can also re-scan anytime from the Dashboard.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">📋</div>
+            <h4>Topic Management</h4>
+            <p>In the Dashboard, check off topics as you cover them, mark critical ones as important with ⭐, add your own topics manually, or remove irrelevant ones.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">📄</div>
+            <h4>PDF Viewer + Notes</h4>
+            <p>Open any PDF in the viewer. On the right, you have a Notion-style rich text editor — format notes with bold, headings, lists, and more. Notes auto-save per file.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">📊</div>
+            <h4>Study Insights</h4>
+            <p>The Insights page shows your overall progress, streaks, important-topic counts, and per-file breakdowns with visual charts.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">📅</div>
+            <h4>Calendar Planner</h4>
+            <p>Click any date on the Calendar to add study notes. Days with events show a green dot. Use it to plan sessions and track what you studied each day.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">👤</div>
+            <h4>Guest vs Google Account</h4>
+            <p>Guest users get 5 file slots and their data is saved locally in the browser. Sign in with Google to unlock 20 slots. Your Guest ID is shown in the top bar.</p>
+          </div>
+          <div class="help-card">
+            <div class="hc-icon">🔑</div>
+            <h4>API Key Setup</h4>
+            <p>Open this HTML file in a text editor and find <code>GEMINI_API_KEY</code> near the top of the &lt;script&gt; section. Replace the placeholder with your Gemini API key.</p>
+          </div>
+        </div>
+
+        <h3 style="color:var(--primary);margin-bottom:16px">Frequently Asked Questions</h3>
+        <div id="faq-list">
+          <div class="accordion-item">
+            <div class="accordion-head" onclick="toggleAccordion(this)">Is my data saved when I close the browser? <span class="arr">▼</span></div>
+            <div class="accordion-body"><div class="accordion-body-inner">Yes! All topic data, notes, and calendar events are saved in your browser's localStorage and IndexedDB. They persist between sessions. However, clearing browser data or using private/incognito mode will erase them.</div></div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-head" onclick="toggleAccordion(this)">Why is AI topic extraction not working? <span class="arr">▼</span></div>
+            <div class="accordion-body"><div class="accordion-body-inner">Make sure you've set your Gemini API key in the source code. Look for <code>GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'</code> and replace it. Also ensure the PDF is text-based (not a scanned image).</div></div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-head" onclick="toggleAccordion(this)">Can I upload the same PDF again? <span class="arr">▼</span></div>
+            <div class="accordion-body"><div class="accordion-body-inner">Yes! StudyNest identifies files by name. If you upload a file with the same name as an existing one, it will load the existing data (topics, notes) instead of creating a duplicate. This lets you reload a PDF to view it again without losing progress.</div></div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-head" onclick="toggleAccordion(this)">What's the difference between Guest and Google sign-in? <span class="arr">▼</span></div>
+            <div class="accordion-body"><div class="accordion-body-inner">Both store data locally on your device. The difference is: Guest accounts get 5 file slots, while Google-authenticated accounts get 20 slots. Your Guest ID is randomly generated per device — use Google sign-in for a consistent identity across devices (though cloud sync is not currently available).</div></div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-head" onclick="toggleAccordion(this)">How do I set up Google sign-in? <span class="arr">▼</span></div>
+            <div class="accordion-body"><div class="accordion-body-inner">Create a project in Google Cloud Console, enable the Google Identity API, create an OAuth 2.0 credential, and paste your Client ID into <code>GOOGLE_CLIENT_ID</code> in the source code. Then add your domain to the authorized origins.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section class="section" id="sec-contact">
+      <div class="section-inner">
+        <div class="section-hero">
+          <div class="breadcrumb"><span>StudyNest</span><span class="sep">›</span><span>Contact</span></div>
+          <h2>Get in Touch</h2>
+          <p>Have feedback, found a bug, or want to suggest a feature?</p>
+        </div>
+        <div class="contact-layout">
+          <div class="contact-info">
+            <h3>Let's connect</h3>
+            <p>StudyNest is built for students. Your feedback makes it better for everyone. Reach out anytime through any of the channels below.</p>
+            <div class="contact-links">
+              <div class="contact-link"><span class="cl-icon">📧</span><span>your.email@example.com</span></div>
+              <div class="contact-link"><span class="cl-icon">🐙</span><span>github.com/yourusername</span></div>
+              <div class="contact-link"><span class="cl-icon">🔗</span><span>linkedin.com/in/yourusername</span></div>
+              <div class="contact-link"><span class="cl-icon">🐦</span><span>@yourhandle</span></div>
+            </div>
+          </div>
+          <div class="contact-form">
+            <div class="form-group">
+              <label class="form-label">Your Name</label>
+              <input type="text" class="form-input" placeholder="e.g. Arjun Patel">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-input" placeholder="arjun@example.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subject</label>
+              <select class="form-input">
+                <option>Bug Report</option>
+                <option>Feature Request</option>
+                <option>General Feedback</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea class="form-input" placeholder="Tell me what's on your mind…"></textarea>
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="submitContact(event)">Send Message ✉️</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Modal Container -->
+<div id="modal-container"></div>
+
+<!-- ============================================================
+     SCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   CONFIG  ← Change these values
+============================================================ */
+const GEMINI_API_KEY   = 'AIzaSyAw9rZqmMmBboQHp8HffnH6WYSvAKlmqzs';   // ← Paste your Gemini API key here
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // ← Paste your Google Client ID here (optional)
+const GUEST_FILE_LIMIT  = 5;
+const GOOGLE_FILE_LIMIT = 20;
+
+/* ============================================================
+   STATE
+============================================================ */
+let currentUser   = null;  // {uid, name, isGuest}
+let userData      = {};    // {files:[], calendarEvents:{}, streak:{}}
+let currentFileId = null;  // ID of selected file
+let currentTopicTab = 'remaining';
+
+// PDF state
+let pdfDoc        = null;
+let pdfCurrentPage= 1;
+let pdfTotalPages = 0;
+let pdfScale      = 1.0;
+let pdfRotation   = 0;
+
+// Calendar state
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedDate = null;
+
+// Auto-save timer
+let noteSaveTimer = null;
+
+// Charts
+let progressChart = null;
+let fileChart     = null;
+
+// PDF.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+/* ============================================================
+   IndexedDB helpers
+============================================================ */
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('StudyNestDB', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('pdfs', { keyPath: 'id' });
+    };
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = rej;
+  });
+}
+async function savePDFBlob(id, blob) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('pdfs', 'readwrite');
+    tx.objectStore('pdfs').put({ id, blob });
+    tx.oncomplete = res; tx.onerror = rej;
+  });
+}
+async function getPDFBlob(id) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('pdfs', 'readonly');
+    const req = tx.objectStore('pdfs').get(id);
+    req.onsuccess = e => res(e.target.result?.blob || null);
+    req.onerror   = rej;
+  });
+}
+async function deletePDFBlob(id) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('pdfs', 'readwrite');
+    tx.objectStore('pdfs').delete(id);
+    tx.oncomplete = res; tx.onerror = rej;
+  });
+}
+
+/* ============================================================
+   LOCAL STORAGE helpers
+============================================================ */
+function lsKey() { return `studynest_${currentUser.uid}`; }
+function saveUserData() { localStorage.setItem(lsKey(), JSON.stringify(userData)); }
+function loadUserData() {
+  const raw = localStorage.getItem(lsKey());
+  userData = raw ? JSON.parse(raw) : { files: [], calendarEvents: {}, streak: { lastDate: null, count: 0 } };
+  if (!userData.calendarEvents) userData.calendarEvents = {};
+  if (!userData.streak) userData.streak = { lastDate: null, count: 0 };
+}
+
+/* ============================================================
+   GUEST / GOOGLE AUTH
+============================================================ */
+function initSession() {
+  // Check if already signed in via Google
+  const savedGoogle = sessionStorage.getItem('sn_google_user');
+  if (savedGoogle) {
+    const guser = JSON.parse(savedGoogle);
+    setUser({ uid: guser.uid, name: guser.name, email: guser.email, isGuest: false });
+    return;
+  }
+  // Guest
+  let guestId = localStorage.getItem('sn_guest_id');
+  if (!guestId) {
+    guestId = 'G' + Math.random().toString(36).substr(2,8).toUpperCase();
+    localStorage.setItem('sn_guest_id', guestId);
+  }
+  setUser({ uid: guestId, name: 'Guest', isGuest: true });
+}
+
+function setUser(user) {
+  currentUser = user;
+  loadUserData();
+  updateUserBadge();
+  renderAll();
+
+  // Init Google Sign-In button if GOOGLE_CLIENT_ID is set
+  if (GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID' && typeof google !== 'undefined') {
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCallback });
+    google.accounts.id.renderButton(
+      document.getElementById('google-btn-wrapper'),
+      { theme: 'outline', size: 'small', shape: 'pill' }
+    );
+  } else {
+    // Fallback button
+    if (user.isGuest) {
+      document.getElementById('google-btn-wrapper').innerHTML =
+        `<button class="btn btn-outline btn-sm" onclick="showGoogleSetupModal()">🔑 Sign in with Google</button>`;
+    }
+  }
+
+  if (!user.isGuest) {
+    document.getElementById('signout-btn').style.display = 'block';
+    document.getElementById('google-btn-wrapper').innerHTML = '';
+  }
+}
+
+function handleGoogleCallback(resp) {
+  try {
+    const payload = JSON.parse(atob(resp.credential.split('.')[1]));
+    const guser = { uid: 'G_' + payload.sub, name: payload.name, email: payload.email, isGuest: false };
+    sessionStorage.setItem('sn_google_user', JSON.stringify(guser));
+    setUser(guser);
+    toast(`Welcome, ${payload.name}! 🎉`, 'success');
+  } catch(e) { toast('Google sign-in failed', 'error'); }
+}
+
+function signOut() {
+  sessionStorage.removeItem('sn_google_user');
+  const guestId = localStorage.getItem('sn_guest_id') || ('G' + Math.random().toString(36).substr(2,8).toUpperCase());
+  localStorage.setItem('sn_guest_id', guestId);
+  setUser({ uid: guestId, name: 'Guest', isGuest: true });
+  document.getElementById('signout-btn').style.display = 'none';
+  toast('Signed out. Using Guest mode.', 'info');
+}
+
+function updateUserBadge() {
+  const badge = document.getElementById('user-badge');
+  const badgeUid = document.getElementById('badge-uid');
+  if (currentUser.isGuest) {
+    badge.innerHTML = `<span>👤</span> Guest · <span class="id">${currentUser.uid}</span>`;
+  } else {
+    badge.innerHTML = `<span>✅</span> ${currentUser.name}`;
+    badgeUid.textContent = '';
+  }
+}
+
+function showGoogleSetupModal() {
+  showModal(
+    '🔑 Google Sign-In',
+    'To enable Google Sign-In, add your Google Client ID to the GOOGLE_CLIENT_ID variable in the source code. This unlocks 20 file slots and a persistent identity.',
+    [{ label: 'OK', cls: 'btn-primary', fn: closeModal }]
+  );
+}
+
+function getFileLimit() { return currentUser.isGuest ? GUEST_FILE_LIMIT : GOOGLE_FILE_LIMIT; }
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link, .nav-links a').forEach(l => l.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  const sl = document.getElementById('sl-' + name);
+  const nl = document.getElementById('nl-' + name);
+  if (sl) sl.classList.add('active');
+  if (nl) nl.classList.add('active');
+
+  // Section-specific refresh
+  if (name === 'insights') renderInsights();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'library')  renderLibrary();
+  if (name === 'home')     renderHome();
+}
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const ham  = document.getElementById('hamburger');
+  menu.classList.toggle('open');
+  ham.classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+/* ============================================================
+   FILE UPLOAD
+============================================================ */
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = ''; // reset so same file can be re-selected
+  processUploadedFile(file);
+}
+
+async function processUploadedFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('Only PDF files are supported', 'error'); return; }
+  if (file.size > 52428800) { toast('File too large (max 50MB)', 'error'); return; }
+
+  // Check by name (recognition)
+  const existing = userData.files.find(f => f.name === file.name);
+  if (existing) {
+    toast(`"${file.name}" already exists — loading your existing data`, 'info');
+    await savePDFBlob(existing.id, file); // refresh blob
+    selectFile(existing.id);
+    showSection('dashboard');
+    return;
+  }
+
+  // Check limit
+  if (userData.files.length >= getFileLimit()) {
+    const lim = getFileLimit();
+    if (currentUser.isGuest) {
+      showModal(
+        '📂 File Limit Reached',
+        `Guest accounts support up to ${lim} files. Sign in with Google to get ${GOOGLE_FILE_LIMIT} slots.`,
+        [{ label: 'OK', cls: 'btn-primary', fn: closeModal }]
+      );
+    } else {
+      toast(`File limit of ${lim} reached`, 'error');
+    }
+    return;
+  }
+
+  // Create file record
+  const id = 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+  const rec = {
+    id,
+    name: file.name,
+    size: file.size,
+    uploadedAt: new Date().toISOString(),
+    topics: { remaining: [], covered: [] },
+    important: [],
+    summary: '',
+    notes: ''
+  };
+  userData.files.push(rec);
+  saveUserData();
+
+  // Save PDF blob
+  await savePDFBlob(id, file);
+
+  toast(`"${file.name}" uploaded!`, 'success');
+  renderAll();
+  selectFile(id);
+
+  // Auto-extract topics
+  showSection('dashboard');
+  extractTopicsWithAI();
+}
+
+// Drag and drop
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processUploadedFile(file);
+});
+
+/* ============================================================
+   FILE SELECTION
+============================================================ */
+function selectFile(id) {
+  currentFileId = id;
+  renderSidebarFiles();
+  renderDashboard();
+  updateViewerFilename();
+}
+
+function getCurrentFile() { return userData.files.find(f => f.id === currentFileId); }
+
+/* ============================================================
+   RENDER ALL
+============================================================ */
+function renderAll() {
+  renderHome();
+  renderLibrary();
+  renderSidebarFiles();
+  renderDashboard();
+  updateFileLimitUI();
+  updateHomeStats();
+}
+
+/* ============================================================
+   HOME
+============================================================ */
+function renderHome() {
+  updateHomeStats();
+  renderFileGrid('home-file-grid', userData.files.slice(0, 6));
+}
+
+function updateHomeStats() {
+  let totalTopics = 0, coveredTopics = 0;
+  userData.files.forEach(f => {
+    totalTopics  += (f.topics.remaining.length + f.topics.covered.length);
+    coveredTopics += f.topics.covered.length;
+  });
+  document.getElementById('stat-files').textContent   = userData.files.length;
+  document.getElementById('stat-topics').textContent  = totalTopics;
+  document.getElementById('stat-covered').textContent = coveredTopics;
+  document.getElementById('stat-streak').textContent  = userData.streak.count;
+}
+
+function updateFileLimitUI() {
+  const used  = userData.files.length;
+  const limit = getFileLimit();
+  const pct   = Math.min((used / limit) * 100, 100);
+  document.getElementById('file-limit-label').textContent = `${used} / ${limit} files used`;
+  const fill = document.getElementById('file-limit-fill');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('warn', pct >= 80);
+  document.getElementById('upgrade-hint').style.display = (currentUser.isGuest && used >= GUEST_FILE_LIMIT - 1) ? 'block' : 'none';
+}
+
+/* ============================================================
+   LIBRARY
+============================================================ */
+function renderLibrary() { renderFileGrid('library-grid', userData.files); }
+
+function renderFileGrid(containerId, files) {
+  const el = document.getElementById(containerId);
+  if (!files || files.length === 0) {
+    el.innerHTML = `<div class="empty-state"><span class="es-icon">📁</span><p>No files yet. Upload your first PDF to get started!</p></div>`;
+    return;
+  }
+  el.innerHTML = files.map(f => {
+    const total   = f.topics.remaining.length + f.topics.covered.length;
+    const covered = f.topics.covered.length;
+    const pct     = total > 0 ? Math.round((covered / total) * 100) : 0;
+    const imp     = f.important ? f.important.length : 0;
+    const date    = new Date(f.uploadedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+    return `
+    <div class="file-card" onclick="selectFile('${f.id}');showSection('dashboard')">
+      <div class="fc-icon">📄</div>
+      <div class="fc-name" title="${f.name}">${f.name}</div>
+      <div class="fc-meta">${formatSize(f.size)} · ${date}</div>
+      <div class="fc-progress">
+        <div class="fc-prog-row"><span>${covered} / ${total} topics</span><span>${pct}%</span></div>
+        <div class="fc-prog-bar"><div class="fc-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="fc-actions">
+        <span class="badge badge-green">${covered} covered</span>
+        ${imp > 0 ? `<span class="badge badge-red">${imp} important</span>` : ''}
+        <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="event.stopPropagation();confirmDeleteFile('${f.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterLibrary(q) {
+  const filtered = userData.files.filter(f => f.name.toLowerCase().includes(q.toLowerCase()));
+  renderFileGrid('library-grid', filtered);
+}
+
+function confirmDeleteFile(id) {
+  const f = userData.files.find(x => x.id === id);
+  if (!f) return;
+  showModal(
+    '🗑️ Delete File',
+    `Delete "${f.name}"? This will remove all topics and notes permanently.`,
+    [
+      { label: 'Cancel',  cls: 'btn-outline', fn: closeModal },
+      { label: 'Delete',  cls: 'btn-danger',  fn: () => { deleteFile(id); closeModal(); } }
+    ]
+  );
+}
+
+async function deleteFile(id) {
+  userData.files = userData.files.filter(f => f.id !== id);
+  saveUserData();
+  await deletePDFBlob(id);
+  if (currentFileId === id) {
+    currentFileId = null;
+    pdfDoc = null;
+    document.getElementById('pdf-canvas').style.display = 'none';
+    document.getElementById('pdf-placeholder').style.display = 'flex';
+  }
+  renderAll();
+  toast('File deleted', 'info');
+}
+
+/* ============================================================
+   SIDEBAR FILES
+============================================================ */
+function renderSidebarFiles() {
+  const el = document.getElementById('sidebar-file-list');
+  if (!userData.files || userData.files.length === 0) {
+    el.innerHTML = '<div style="font-size:.78rem;color:var(--text-light);padding:4px 10px;">No files yet</div>';
+    return;
+  }
+  el.innerHTML = userData.files.map(f =>
+    `<div class="sidebar-file-item ${f.id===currentFileId?'active':''}" onclick="selectFile('${f.id}');showSection('dashboard')">
+      <span>📄</span><span class="fn">${f.name}</span>
+    </div>`
+  ).join('');
+}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+function renderDashboard() {
+  const f = getCurrentFile();
+  document.getElementById('dash-prompt').style.display  = f ? 'none'  : 'block';
+  document.getElementById('dash-content').style.display = f ? 'block' : 'none';
+  if (!f) return;
+
+  document.getElementById('dash-filename').textContent = f.name;
+  document.getElementById('dash-title').textContent = 'Topics — ' + f.name;
+
+  if (f.summary) {
+    document.getElementById('summary-card').style.display = 'block';
+    document.getElementById('summary-text').textContent = f.summary;
+  }
+
+  renderTopicList('remaining');
+  renderTopicList('covered');
+  updateTopicCounts();
+}
+
+function renderTopicList(type) {
+  const f = getCurrentFile();
+  if (!f) return;
+  const el = document.getElementById('topic-list-' + type);
+  const topics = f.topics[type] || [];
+  if (topics.length === 0) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-light);font-size:.875rem;">
+      ${type==='remaining' ? '🎉 All topics covered!' : '📖 No topics covered yet.'}
+    </div>`;
+    return;
+  }
+  el.innerHTML = topics.map(t => {
+    const isImp = f.important && f.important.includes(t);
+    const covered = type === 'covered';
+    return `
+    <div class="topic-item ${covered?'covered':''} ${isImp?'important':''}" data-topic="${escHtml(t)}">
+      <div class="topic-check" onclick="toggleCovered('${escHtml(t)}')">
+        ${covered ? '✓' : ''}
+      </div>
+      <span class="topic-name">${escHtml(t)}</span>
+      ${isImp ? '<span class="topic-imp-badge">⭐ Important</span>' : ''}
+      <div class="topic-actions">
+        <button class="topic-action-btn imp" onclick="toggleImportant('${escHtml(t)}')" title="${isImp?'Remove importance':'Mark important'}">
+          ${isImp ? '★' : '☆'}
+        </button>
+        <button class="topic-action-btn del" onclick="removeTopic('${escHtml(t)}','${type}')" title="Remove">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateTopicCounts() {
+  const f = getCurrentFile();
+  if (!f) return;
+  document.getElementById('cnt-remaining').textContent = f.topics.remaining.length;
+  document.getElementById('cnt-covered').textContent   = f.topics.covered.length;
+}
+
+function switchTopicTab(type) {
+  currentTopicTab = type;
+  document.getElementById('tab-remaining').classList.toggle('active', type === 'remaining');
+  document.getElementById('tab-covered').classList.toggle('active', type === 'covered');
+  document.getElementById('topic-list-remaining').style.display = type === 'remaining' ? 'flex' : 'none';
+  document.getElementById('topic-list-covered').style.display   = type === 'covered'   ? 'flex' : 'none';
+}
+
+function toggleCovered(topicName) {
+  const f = getCurrentFile();
+  if (!f) return;
+  const inRemaining = f.topics.remaining.includes(topicName);
+  if (inRemaining) {
+    f.topics.remaining = f.topics.remaining.filter(t => t !== topicName);
+    f.topics.covered.push(topicName);
+    logStudySessionAuto();
+  } else {
+    f.topics.covered   = f.topics.covered.filter(t => t !== topicName);
+    f.topics.remaining.push(topicName);
+  }
+  saveUserData();
+  renderTopicList('remaining');
+  renderTopicList('covered');
+  updateTopicCounts();
+  updateHomeStats();
+}
+
+function toggleImportant(topicName) {
+  const f = getCurrentFile();
+  if (!f) return;
+  if (!f.important) f.important = [];
+  if (f.important.includes(topicName)) {
+    f.important = f.important.filter(t => t !== topicName);
+  } else {
+    f.important.push(topicName);
+  }
+  saveUserData();
+  renderTopicList('remaining');
+  renderTopicList('covered');
+}
+
+function removeTopic(topicName, type) {
+  const f = getCurrentFile();
+  if (!f) return;
+  f.topics[type]   = f.topics[type].filter(t => t !== topicName);
+  f.important      = (f.important || []).filter(t => t !== topicName);
+  saveUserData();
+  renderTopicList(type);
+  updateTopicCounts();
+  updateHomeStats();
+}
+
+function addTopic() {
+  const input = document.getElementById('new-topic-input');
+  const val   = input.value.trim();
+  if (!val) return;
+  const f = getCurrentFile();
+  if (!f) { toast('Select a file first', 'error'); return; }
+  if (f.topics.remaining.includes(val) || f.topics.covered.includes(val)) {
+    toast('Topic already exists', 'error'); return;
+  }
+  f.topics.remaining.push(val);
+  saveUserData();
+  input.value = '';
+  renderTopicList('remaining');
+  updateTopicCounts();
+  updateHomeStats();
+  toast('Topic added', 'success');
+}
+
+/* ============================================================
+   GEMINI AI — TOPIC EXTRACTION
+============================================================ */
+async function extractTopicsWithAI() {
+  const f = getCurrentFile();
+  if (!f) { toast('No file selected', 'error'); return; }
+  if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+    toast('Set your Gemini API key in the source code', 'error'); return;
+  }
+
+  const btn = document.getElementById('dash-ai-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Scanning…';
+  toast('AI is reading your PDF…', 'info');
+
+  try {
+    const blob = await getPDFBlob(f.id);
+    if (!blob) { toast('PDF not found. Please re-upload the file.', 'error'); return; }
+
+    const base64 = await blobToBase64(blob);
+    const prompt = `You are a study assistant. Analyze this PDF and extract all chapter names, section titles, and major topic names.
+Return ONLY a valid JSON object in this exact format (no markdown, no explanation):
+{"topics": ["Topic 1", "Topic 2", "Topic 3", ...]}
+Extract every chapter, unit, module, section or significant topic. If the document has numbered chapters, include the number. Be comprehensive.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: 'application/pdf', data: base64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
+        })
+      }
+    );
+
+    if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || 'API error'); }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    if (!parsed.topics || !Array.isArray(parsed.topics)) throw new Error('Invalid response format');
+
+    // Merge: keep existing covered, add new as remaining
+    const existingCovered = new Set(f.topics.covered);
+    const allExisting     = new Set([...f.topics.remaining, ...f.topics.covered]);
+    const newTopics = parsed.topics.filter(t => !allExisting.has(t));
+
+    f.topics.remaining = [...f.topics.remaining, ...newTopics];
+    saveUserData();
+    renderDashboard();
+    updateHomeStats();
+    toast(`✨ Found ${parsed.topics.length} topics! (${newTopics.length} new)`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('AI extraction failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Re-scan with AI';
+  }
+}
+
+/* ============================================================
+   GEMINI AI — SUMMARY
+============================================================ */
+async function generateSummary() {
+  const f = getCurrentFile();
+  if (!f) { toast('No file selected', 'error'); return; }
+  if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+    toast('Set your Gemini API key in the source code', 'error'); return;
+  }
+
+  toast('Generating AI summary…', 'info');
+  document.getElementById('summary-card').style.display = 'block';
+  document.getElementById('summary-text').innerHTML = `<div class="summary-skeleton">
+    ${Array(5).fill('<div class="skel-line"></div>').join('')}
+  </div>`;
+
+  try {
+    const blob = await getPDFBlob(f.id);
+    if (!blob) { toast('PDF not found. Please re-upload the file.', 'error'); return; }
+
+    const base64 = await blobToBase64(blob);
+    const prompt = `Provide a comprehensive academic summary of this PDF document. Structure it as:
+
+1. Overview (2-3 sentences about what this document covers)
+2. Key Topics (brief description of main chapters/sections)
+3. Important Concepts (3-5 core concepts from the document)
+4. Study Tips (2-3 specific tips for studying this material)
+
+Be concise, accurate, and helpful for a student preparing for exams.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: 'application/pdf', data: base64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1500 }
+        })
+      }
+    );
+
+    if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || 'API error'); }
+
+    const data = await response.json();
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No summary generated.';
+    f.summary = summary;
+    saveUserData();
+
+    document.getElementById('summary-text').textContent = summary;
+    toast('Summary generated!', 'success');
+  } catch(e) {
+    document.getElementById('summary-text').textContent = 'Summary generation failed: ' + e.message;
+    toast('Summary failed: ' + e.message, 'error');
+  }
+}
+
+function showSummarySection() {
+  const f = getCurrentFile();
+  if (!f) return;
+  const card = document.getElementById('summary-card');
+  card.style.display = 'block';
+  if (f.summary) document.getElementById('summary-text').textContent = f.summary;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ============================================================
+   PDF VIEWER
+============================================================ */
+async function loadPDFForCurrentFile() {
+  const f = getCurrentFile();
+  if (!f) return;
+  const blob = await getPDFBlob(f.id);
+  if (!blob) {
+    toast('PDF not in storage. Please re-upload the file.', 'error');
+    return;
+  }
+  loadPDFFromBlob(blob, f.name);
+}
+
+async function loadPDFFromInput(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  // If file matches an existing record by name, select it
+  const existing = userData.files.find(f => f.name === file.name);
+  if (existing) {
+    await savePDFBlob(existing.id, file);
+    selectFile(existing.id);
+  }
+  loadPDFFromBlob(file, file.name);
+}
+
+async function loadPDFFromBlob(blob, name) {
+  try {
+    pdfCurrentPage = 1;
+    pdfScale       = 1.0;
+    pdfRotation    = 0;
+    document.getElementById('zoom-label').textContent = '100%';
+
+    const arrBuf = await blob.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: arrBuf }).promise;
+    pdfTotalPages = pdfDoc.numPages;
+
+    document.getElementById('page-total').textContent     = pdfTotalPages;
+    document.getElementById('page-num-input').max         = pdfTotalPages;
+    document.getElementById('pdf-placeholder').style.display = 'none';
+    document.getElementById('pdf-canvas').style.display  = 'block';
+
+    updateViewerFilename();
+    renderPDFPage(pdfCurrentPage);
+    toast(`Loaded: ${name}`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Could not load PDF: ' + e.message, 'error');
+  }
+}
+
+async function renderPDFPage(num) {
+  if (!pdfDoc) return;
+  const page     = await pdfDoc.getPage(num);
+  const viewport = page.getViewport({ scale: pdfScale, rotation: pdfRotation });
+  const canvas   = document.getElementById('pdf-canvas');
+  const ctx      = canvas.getContext('2d');
+  canvas.height  = viewport.height;
+  canvas.width   = viewport.width;
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  document.getElementById('page-num-input').value = num;
+}
+
+function changePage(delta) {
+  const newPage = pdfCurrentPage + delta;
+  if (newPage < 1 || newPage > pdfTotalPages) return;
+  pdfCurrentPage = newPage;
+  renderPDFPage(pdfCurrentPage);
+}
+
+function jumpToPage(n) {
+  n = parseInt(n);
+  if (isNaN(n) || n < 1 || n > pdfTotalPages) return;
+  pdfCurrentPage = n;
+  renderPDFPage(pdfCurrentPage);
+}
+
+function changeZoom(delta) {
+  pdfScale = Math.max(0.25, Math.min(3.0, pdfScale + delta));
+  document.getElementById('zoom-label').textContent = Math.round(pdfScale * 100) + '%';
+  renderPDFPage(pdfCurrentPage);
+}
+
+function rotatePDF() {
+  pdfRotation = (pdfRotation + 90) % 360;
+  renderPDFPage(pdfCurrentPage);
+}
+
+function updateViewerFilename() {
+  const f = getCurrentFile();
+  document.getElementById('viewer-filename').textContent = f ? f.name : 'No file selected';
+}
+
+// Auto-load PDF when viewer section is shown
+const origShowSection = showSection;
+// Override section switch to load PDF in viewer
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link, .nav-links a').forEach(l => l.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  const sl = document.getElementById('sl-' + name);
+  const nl = document.getElementById('nl-' + name);
+  if (sl) sl.classList.add('active');
+  if (nl) nl.classList.add('active');
+
+  if (name === 'viewer') { loadNotesForCurrentFile(); if (!pdfDoc && currentFileId) loadPDFForCurrentFile(); }
+  if (name === 'insights') renderInsights();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'library')  renderLibrary();
+  if (name === 'home')     renderHome();
+}
+
+/* ============================================================
+   NOTES
+============================================================ */
+function loadNotesForCurrentFile() {
+  const f = getCurrentFile();
+  const notesArea = document.getElementById('notes-area');
+  notesArea.innerHTML = f ? (f.notes || '') : '';
+}
+
+function fmtNote(cmd, val) {
+  document.getElementById('notes-area').focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function insertCode() {
+  fmtNote('insertHTML', '<code>code here</code>');
+}
+
+function scheduleNoteSave() {
+  clearTimeout(noteSaveTimer);
+  document.getElementById('notes-save-status').textContent = 'Unsaved…';
+  noteSaveTimer = setTimeout(saveNotes, 1500);
+}
+
+function saveNotes() {
+  const f = getCurrentFile();
+  if (!f) return;
+  f.notes = document.getElementById('notes-area').innerHTML;
+  saveUserData();
+  document.getElementById('notes-save-status').textContent = 'Saved ✓';
+}
+
+function clearNotes() {
+  showModal('Clear Notes', 'Are you sure? This will erase all notes for this file.',
+    [
+      { label: 'Cancel', cls: 'btn-outline', fn: closeModal },
+      { label: 'Clear',  cls: 'btn-danger',  fn: () => {
+        document.getElementById('notes-area').innerHTML = '';
+        saveNotes();
+        closeModal();
+      }}
+    ]);
+}
+
+/* ============================================================
+   INSIGHTS
+============================================================ */
+function renderInsights() {
+  let totalTopics = 0, coveredTopics = 0, impTopics = 0;
+  const fileLabels = [], fileCovered = [], fileRemaining = [];
+
+  userData.files.forEach(f => {
+    const tot = f.topics.remaining.length + f.topics.covered.length;
+    totalTopics  += tot;
+    coveredTopics += f.topics.covered.length;
+    impTopics     += (f.important || []).length;
+    fileLabels.push(f.name.replace('.pdf','').substring(0, 18));
+    fileCovered.push(f.topics.covered.length);
+    fileRemaining.push(f.topics.remaining.length);
+  });
+
+  document.getElementById('ins-files').textContent    = userData.files.length;
+  document.getElementById('ins-topics').textContent   = totalTopics;
+  document.getElementById('ins-covered').textContent  = coveredTopics;
+  document.getElementById('ins-important').textContent= impTopics;
+  const pct = totalTopics > 0 ? Math.round(coveredTopics/totalTopics*100) : 0;
+  document.getElementById('ins-covered-pct').textContent = pct + '% complete';
+
+  // Streak
+  const streak = userData.streak.count;
+  document.getElementById('ins-streak').textContent = streak;
+  document.getElementById('ins-streak-sub').textContent = streak > 0
+    ? `Last studied: ${userData.streak.lastDate}` : 'Start studying today to begin your streak!';
+
+  // Progress donut chart
+  const pgCtx = document.getElementById('progress-chart').getContext('2d');
+  if (progressChart) progressChart.destroy();
+  progressChart = new Chart(pgCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Covered', 'Remaining', 'Important'],
+      datasets: [{ data: [coveredTopics, Math.max(0,totalTopics-coveredTopics), impTopics],
+        backgroundColor: ['#618552','#C0623A','#436A8A'],
+        borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 10 } } } }
+  });
+
+  // Per-file bar chart
+  const fCtx = document.getElementById('file-chart').getContext('2d');
+  if (fileChart) fileChart.destroy();
+  fileChart = new Chart(fCtx, {
+    type: 'bar',
+    data: {
+      labels: fileLabels.length ? fileLabels : ['No files'],
+      datasets: [
+        { label: 'Covered',   data: fileCovered,   backgroundColor: '#618552', borderRadius: 4 },
+        { label: 'Remaining', data: fileRemaining, backgroundColor: '#EDE6D2', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family:'DM Sans', size:11 }, boxWidth:10 } } },
+      scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true } }
+    }
+  });
+
+  // Per-file progress list
+  const listEl = document.getElementById('file-progress-list');
+  if (userData.files.length === 0) {
+    listEl.innerHTML = '<div class="text-muted">No files yet.</div>'; return;
+  }
+  listEl.innerHTML = userData.files.map(f => {
+    const tot = f.topics.remaining.length + f.topics.covered.length;
+    const pct = tot > 0 ? Math.round(f.topics.covered.length/tot*100) : 0;
+    const imp = (f.important||[]).length;
+    return `
+    <div>
+      <div class="row mb-8" style="justify-content:space-between">
+        <span style="font-weight:500;color:var(--primary);font-size:.875rem">${f.name}</span>
+        <span style="font-size:.8rem;color:var(--text-muted)">${f.topics.covered.length}/${tot} · ${pct}%
+        ${imp ? `<span class="badge badge-red" style="margin-left:6px">${imp} important</span>` : ''}</span>
+      </div>
+      <div class="fc-prog-bar" style="height:8px"><div class="fc-prog-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function logStudySession() {
+  const today = new Date().toISOString().split('T')[0];
+  updateStreak(today);
+  saveUserData();
+  renderInsights();
+  toast('✅ Study session logged for today!', 'success');
+}
+
+function logStudySessionAuto() {
+  const today = new Date().toISOString().split('T')[0];
+  updateStreak(today);
+}
+
+function updateStreak(today) {
+  const s = userData.streak;
+  if (s.lastDate === today) return; // already logged today
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  if (s.lastDate === yesterday) {
+    s.count++;
+  } else {
+    s.count = 1;
+  }
+  s.lastDate = today;
+  saveUserData();
+  document.getElementById('stat-streak').textContent = s.count;
+}
+
+/* ============================================================
+   CALENDAR
+============================================================ */
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${months[calMonth]} ${calYear}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  // Day of week headers
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow'; el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Prev month filler
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.textContent = prevDays - i;
+    grid.appendChild(el);
+  }
+
+  // Days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEvent = userData.calendarEvents[dateStr] && userData.calendarEvents[dateStr].length > 0;
+    const isToday  = dateStr === todayStr;
+    const isSel    = dateStr === selectedDate;
+    const el = document.createElement('div');
+    el.className = `cal-day${isToday?' today':''}${isSel?' selected':''}${hasEvent?' has-event':''}`;
+    el.textContent = d;
+    el.onclick = () => selectCalDay(dateStr);
+    grid.appendChild(el);
+  }
+}
+
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function selectCalDay(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+
+  const d = new Date(dateStr);
+  document.getElementById('event-panel-date').textContent =
+    d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+
+  renderCalendarEvents();
+}
+
+function renderCalendarEvents() {
+  const el = document.getElementById('event-list');
+  const events = userData.calendarEvents[selectedDate] || [];
+  if (events.length === 0) {
+    el.innerHTML = '<div style="font-size:.82rem;color:var(--text-light)">No events for this day.</div>';
+    return;
+  }
+  el.innerHTML = events.map((ev, i) => `
+    <div class="event-item">
+      <div class="ev-dot"></div>
+      <span class="ev-text">${escHtml(ev)}</span>
+      <span class="ev-del" onclick="deleteCalEvent(${i})">✕</span>
+    </div>`).join('');
+}
+
+function addCalendarEvent() {
+  if (!selectedDate) { toast('Select a date first', 'error'); return; }
+  const input = document.getElementById('new-event-input');
+  const val   = input.value.trim();
+  if (!val) return;
+  if (!userData.calendarEvents[selectedDate]) userData.calendarEvents[selectedDate] = [];
+  userData.calendarEvents[selectedDate].push(val);
+  saveUserData();
+  input.value = '';
+  renderCalendarEvents();
+  renderCalendar();
+}
+
+function deleteCalEvent(idx) {
+  userData.calendarEvents[selectedDate].splice(idx, 1);
+  if (userData.calendarEvents[selectedDate].length === 0) delete userData.calendarEvents[selectedDate];
+  saveUserData();
+  renderCalendarEvents();
+  renderCalendar();
+}
+
+/* ============================================================
+   MODAL
+============================================================ */
+function showModal(title, body, actions) {
+  closeModal();
+  const btns = actions.map(a => `<button class="btn ${a.cls}" onclick="(${a.fn.toString()})()">${a.label}</button>`).join('');
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="modal-actions">${btns}</div>
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ============================================================
+   ACCORDION
+============================================================ */
+function toggleAccordion(head) {
+  const item = head.closest('.accordion-item');
+  item.classList.toggle('open');
+}
+
+/* ============================================================
+   CONTACT
+============================================================ */
+function submitContact(e) {
+  e.preventDefault ? e.preventDefault() : null;
+  toast('Message sent! (Note: This is a demo — connect a backend to enable real sending)', 'success');
+}
+
+/* ============================================================
+   UTILS
+============================================================ */
+function blobToBase64(blob) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload  = () => res(reader.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1048576)    return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  initSession();
+});
+</script>
+</body>
+</html>
+
